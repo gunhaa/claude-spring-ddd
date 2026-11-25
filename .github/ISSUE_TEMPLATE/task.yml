@@ -1,0 +1,36 @@
+name: 작업 제안
+description: 새 기능·개선·리팩터링 제안 (plan-task 계획의 출발점)
+labels: ["enhancement"]
+body:
+  - type: textarea
+    id: goal
+    attributes:
+      label: 목표
+      description: 이 작업이 끝나면 무엇이 가능해지는지
+    validations:
+      required: true
+  - type: input
+    id: context
+    attributes:
+      label: Bounded Context
+      description: "속할 컨텍스트 (예: order). 새 컨텍스트가 필요하면 '신규: 이름'"
+    validations:
+      required: true
+  - type: textarea
+    id: scope
+    attributes:
+      label: 범위
+      description: 포함할 것과 하지 않을 것
+    validations:
+      required: true
+  - type: textarea
+    id: acceptance
+    attributes:
+      label: 완료 기준
+      description: 검증 가능한 조건 (예 "GET /api/products?category=book → 200, book 상품만 반환")
+    validations:
+      required: true
+  - type: textarea
+    id: notes
+    attributes:
+      label: 참고

@@ -1,0 +1,83 @@
+# 모든 환경에 공통인 설정. 환경마다 다르거나 부하 테스트로 정한 값은 ${변수}로 받고, 목록과 기본값은 .env.example에 있다.
+# 변수를 어디서 읽는지는 프로필이 정한다: local은 .env.example·.env 파일, prod는 배포 환경변수.
+
+spring:
+  application:
+    name: app
+  profiles:
+    # 프로필을 지정하지 않으면 local로 실행한다. 운영은 SPRING_PROFILES_ACTIVE=prod
+    default: local
+
+  datasource:
+    hikari:
+      maximum-pool-size: ${DB_POOL_MAX_SIZE}
+      connection-timeout: ${DB_POOL_CONNECTION_TIMEOUT}
+      idle-timeout: ${DB_POOL_IDLE_TIMEOUT}
+      max-lifetime: ${DB_POOL_MAX_LIFETIME}
+      # 트랜잭션 경계는 Spring이 정한다. hibernate.connection.provider_disables_autocommit과 함께 쓴다
+      auto-commit: false
+      data-source-properties:
+        # 쿼리와 배치
+        rewriteBatchedStatements: true
+        cachePrepStmts: true
+        prepStmtCacheSize: 250
+        prepStmtCacheSqlLimit: 2048
+        useServerPrepStmts: true
+        # 드라이버 내부 상태와 네트워크 왕복 줄이기
+        useLocalSessionState: true
+        cacheResultSetMetadata: true
+        cacheServerConfiguration: true
+        elideSetAutoCommits: true
+        maintainTimeStats: false
+        # 타임아웃과 세션 변수. 드라이버의 시간대 변환 기준은 Clock과 같은 APP_TIME_ZONE (URL에 쓰지 않아 Testcontainers에도 적용된다)
+        connectionTimeZone: ${APP_TIME_ZONE}
+        connectTimeout: ${DB_CONNECT_TIMEOUT}
+        socketTimeout: ${DB_SOCKET_TIMEOUT}
+        zeroDateTimeBehavior: convertToNull
+        sessionVariables: "character_set_results=utf8mb4,innodb_lock_wait_timeout=${DB_LOCK_WAIT_TIMEOUT}"
+
+  jpa:
+    open-in-view: false
+    hibernate:
+      # 스키마는 Flyway(src/main/resources/db/migration)가 만든다. 모든 환경에서 Entity와 일치하는지만 검증한다
+      ddl-auto: validate
+    properties:
+      hibernate:
+        # N+1 완화: 지연 로딩 컬렉션·프록시를 IN 절로 묶어 가져온다
+        default_batch_fetch_size: ${JPA_DEFAULT_BATCH_FETCH_SIZE}
+        # 쓰기 배치 (rewriteBatchedStatements와 함께 동작, IDENTITY 키 생성은 insert 배치가 되지 않는다)
+        jdbc:
+          batch_size: 100
+        order_inserts: true
+        order_updates: true
+        query:
+          # IN 절 파라미터 수를 2의 거듭제곱으로 맞춰 실행 계획 캐시를 재사용한다
+          in_clause_parameter_padding: true
+          # 컬렉션 fetch join + 페이징은 메모리 페이징 대신 예외를 낸다
+          fail_on_pagination_over_collection_fetch: true
+        connection:
+          provider_disables_autocommit: true
+
+server:
+  tomcat:
+    accept-count: ${TOMCAT_ACCEPT_COUNT}
+    max-connections: ${TOMCAT_MAX_CONNECTIONS}
+    threads:
+      max: ${TOMCAT_THREADS_MAX}
+      min-spare: ${TOMCAT_THREADS_MIN_SPARE}
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health
+
+logging:
+  structured:
+    format:
+      # 콘솔 로그를 ECS(Elastic Common Schema) JSON 한 줄로 출력한다. service.name은 spring.application.name을 쓴다.
+      console: ecs
+
+# 애플리케이션 시간대. Clock 빈(LocalDateTime.now(clock), JPA Auditing)이 이 값을 쓴다. JVM 기본 시간대에 기대지 않는다
+app:
+  time-zone: ${APP_TIME_ZONE}

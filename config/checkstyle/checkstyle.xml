@@ -1,0 +1,186 @@
+<?xml version="1.0"?>
+<!DOCTYPE module PUBLIC
+        "-//Checkstyle//DTD Checkstyle Configuration 1.3//EN"
+        "https://checkstyle.org/dtds/configuration_1_3.dtd">
+
+<!--
+  서식(들여쓰기·줄바꿈·공백·import 순서)은 Spotless(palantir-java-format)가 맡는다.
+  여기서는 포매터가 다루지 않는 것만 검사한다: 계층 의존, 금지 API, 이름, 복잡도, 흔한 버그 패턴.
+  특정 위치에서 규칙을 끄려면 @SuppressWarnings("checkstyle:<규칙명>")을 쓰고 이유를 주석으로 남긴다.
+-->
+<module name="Checker">
+    <property name="charset" value="UTF-8"/>
+    <property name="severity" value="error"/>
+    <property name="fileExtensions" value="java"/>
+
+    <module name="SuppressWarningsFilter"/>
+    <!-- 테스트는 필드 주입(@Autowired MockMvc)을 허용한다 -->
+    <module name="SuppressionSingleFilter">
+        <property name="files" value="[\\/]src[\\/]test[\\/]"/>
+        <property name="id" value="noFieldInjection"/>
+    </module>
+    <!-- 테스트는 now()로 현재 시각을 써도 된다 -->
+    <module name="SuppressionSingleFilter">
+        <property name="files" value="[\\/]src[\\/]test[\\/]"/>
+        <property name="id" value="noNowWithoutClock"/>
+    </module>
+    <!-- 스프링 부트 메인 클래스와 테스트 클래스(ArchUnit의 static @ArchTest 필드 등)는 유틸리티 클래스가 아니다 -->
+    <module name="SuppressionSingleFilter">
+        <property name="files" value="Application\.java$|[\\/]src[\\/]test[\\/]"/>
+        <property name="checks" value="HideUtilityClassConstructor"/>
+    </module>
+
+    <module name="FileTabCharacter"/>
+    <module name="NewlineAtEndOfFile"/>
+    <module name="FileLength">
+        <property name="max" value="500"/>
+    </module>
+    <module name="LineLength">
+        <property name="max" value="120"/>
+        <property name="ignorePattern" value="^(package|import) .*|https?://"/>
+    </module>
+
+    <!-- 필드 주입 금지: 생성자 주입(@RequiredArgsConstructor + private final)을 쓴다 -->
+    <module name="RegexpMultiline">
+        <property name="id" value="noFieldInjection"/>
+        <property name="format" value="@Autowired\s*\n\s*(private|protected|public)?\s*[^(\n]*;"/>
+        <property name="message" value="필드 주입 대신 생성자 주입(@RequiredArgsConstructor + private final)을 쓴다."/>
+    </module>
+
+    <module name="TreeWalker">
+        <module name="SuppressWarningsHolder"/>
+
+        <!-- ===== 계층 의존 (config/checkstyle/import-control.xml) ===== -->
+        <module name="ImportControl">
+            <property name="file" value="${config_loc}/import-control.xml"/>
+            <property name="path" value="^.*[\\/]src[\\/]main[\\/].*$"/>
+        </module>
+
+        <!-- ===== import ===== -->
+        <module name="AvoidStarImport"/>
+        <module name="RedundantImport"/>
+        <module name="UnusedImports"/>
+        <module name="IllegalImport">
+            <!-- javax.*: Boot 3+는 jakarta.* 를 쓴다 -->
+            <property name="illegalPkgs" value="sun, javax.persistence, javax.validation, javax.servlet, javax.transaction"/>
+            <!-- JUnit 4 → JUnit 5(Jupiter), 옛 날짜 API → java.time, JTA @Transactional → Spring @Transactional -->
+            <property name="illegalClasses" value="
+                org.junit.Test, org.junit.Assert, org.junit.Before, org.junit.After,
+                org.junit.BeforeClass, org.junit.AfterClass, org.junit.Ignore, org.junit.runner.RunWith,
+                java.util.Date, java.util.Calendar, java.text.SimpleDateFormat,
+                jakarta.transaction.Transactional"/>
+        </module>
+
+        <!-- ===== 금지 API ===== -->
+        <module name="RegexpSinglelineJava">
+            <property name="format" value="System\.(out|err)\.print|\.printStackTrace\(\)"/>
+            <property name="ignoreComments" value="true"/>
+            <property name="message" value="System.out/err, printStackTrace() 대신 로거(@Slf4j)를 쓴다."/>
+        </module>
+        <module name="RegexpSinglelineJava">
+            <property name="id" value="noNowWithoutClock"/>
+            <property name="format" value="\b(LocalDateTime|LocalDate|LocalTime|Instant|ZonedDateTime|OffsetDateTime)\.now\(\)"/>
+            <property name="ignoreComments" value="true"/>
+            <property name="message" value="현재 시각은 Clock 빈으로 얻는다: LocalDateTime.now(clock)."/>
+        </module>
+        <module name="IllegalInstantiation">
+            <property name="classes" value="java.lang.Boolean, java.lang.Integer, java.lang.Long"/>
+        </module>
+
+        <!-- ===== 이름 ===== -->
+        <module name="PackageName">
+            <property name="format" value="^[a-z]+(\.[a-z][a-z0-9]*)*$"/>
+        </module>
+        <module name="TypeName"/>
+        <!-- 테스트 메서드의 메서드_상황_결과 형식을 위해 밑줄을 허용한다 -->
+        <module name="MethodName">
+            <property name="format" value="^[a-z][a-zA-Z0-9_]*$"/>
+        </module>
+        <module name="MemberName"/>
+        <module name="ParameterName"/>
+        <module name="LambdaParameterName"/>
+        <module name="LocalVariableName"/>
+        <module name="LocalFinalVariableName"/>
+        <module name="StaticVariableName"/>
+        <module name="ConstantName"/>
+        <module name="ClassTypeParameterName"/>
+        <module name="MethodTypeParameterName"/>
+        <module name="RecordComponentName"/>
+        <module name="AbbreviationAsWordInName"/>
+
+        <!-- ===== 선언과 클래스 설계 ===== -->
+        <module name="PackageDeclaration"/>
+        <module name="OuterTypeFilename"/>
+        <module name="OneTopLevelClass"/>
+        <module name="MultipleVariableDeclarations"/>
+        <module name="ModifierOrder"/>
+        <module name="RedundantModifier"/>
+        <module name="VisibilityModifier"/>
+        <module name="FinalClass"/>
+        <module name="HideUtilityClassConstructor"/>
+        <module name="InterfaceIsType"/>
+        <module name="MutableException"/>
+        <module name="OverloadMethodsDeclarationOrder"/>
+        <module name="ExplicitInitialization"/>
+        <module name="UpperEll"/>
+        <module name="ArrayTypeStyle"/>
+
+        <!-- ===== 흔한 버그 패턴 ===== -->
+        <module name="EqualsHashCode"/>
+        <module name="CovariantEquals"/>
+        <module name="EqualsAvoidNull"/>
+        <module name="StringLiteralEquality"/>
+        <module name="InnerAssignment"/>
+        <module name="ParameterAssignment"/>
+        <module name="ModifiedControlVariable"/>
+        <module name="FallThrough"/>
+        <module name="MissingSwitchDefault"/>
+        <module name="DefaultComesLast"/>
+        <module name="NoFinalizer"/>
+        <module name="HiddenField">
+            <property name="ignoreConstructorParameter" value="true"/>
+            <property name="ignoreSetter" value="true"/>
+            <property name="setterCanReturnItsClass" value="true"/>
+            <property name="ignoreAbstractMethods" value="true"/>
+        </module>
+        <module name="UnusedLocalVariable"/>
+
+        <!-- ===== 블록과 문장 ===== -->
+        <module name="NeedBraces"/>
+        <module name="EmptyBlock">
+            <property name="option" value="text"/>
+        </module>
+        <module name="EmptyCatchBlock"/>
+        <module name="EmptyStatement"/>
+        <module name="AvoidNestedBlocks">
+            <property name="allowInSwitchCase" value="true"/>
+        </module>
+        <module name="OneStatementPerLine"/>
+        <module name="SimplifyBooleanExpression"/>
+        <module name="SimplifyBooleanReturn"/>
+        <module name="UnnecessarySemicolonInEnumeration"/>
+        <module name="UnnecessarySemicolonAfterTypeMemberDeclaration"/>
+
+        <!-- ===== 크기와 복잡도 ===== -->
+        <module name="MethodLength">
+            <property name="max" value="60"/>
+            <property name="countEmpty" value="false"/>
+        </module>
+        <module name="ParameterNumber">
+            <property name="max" value="7"/>
+            <property name="ignoreOverriddenMethods" value="true"/>
+        </module>
+        <module name="CyclomaticComplexity">
+            <property name="max" value="10"/>
+            <property name="switchBlockAsSingleDecisionPoint" value="true"/>
+        </module>
+        <module name="BooleanExpressionComplexity"/>
+        <module name="NestedIfDepth">
+            <property name="max" value="2"/>
+        </module>
+        <module name="NestedForDepth">
+            <property name="max" value="2"/>
+        </module>
+        <module name="NestedTryDepth"/>
+    </module>
+</module>

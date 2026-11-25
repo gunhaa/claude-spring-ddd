@@ -1,0 +1,27 @@
+# 로컬 개발. 테스트는 test 프로필(src/test/resources)을 쓴다. 변수는 .env.example(기본값) → .env(개인 값) 순으로 읽고 뒤가 우선한다. OS 환경변수가 가장 우선한다.
+
+spring:
+  config:
+    import:
+      - optional:file:.env.example[.properties]
+      - optional:file:.env[.properties]
+  datasource:
+    url: jdbc:mysql://${DB_HOST}:${DB_PORT}/${DB_NAME}?characterEncoding=UTF-8&useSSL=false&allowPublicKeyRetrieval=true
+    username: ${DB_USERNAME}
+    password: ${DB_PASSWORD}
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health, info, metrics
+  endpoint:
+    health:
+      show-details: always
+
+logging:
+  level:
+    # SQL은 show-sql(stdout 직접 출력) 대신 로거로 남겨 ECS 형식을 유지한다
+    org.hibernate.SQL: debug
+    # 바인딩 값까지 보려면 주석을 푼다
+#    org.hibernate.orm.jdbc.bind: trace

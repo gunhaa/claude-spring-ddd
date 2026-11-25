@@ -1,0 +1,71 @@
+name: 버그
+description: 기대와 다르게 동작하는 문제
+labels: ["bug"]
+body:
+  - type: textarea
+    id: summary
+    attributes:
+      label: 요약
+      description: 무엇이 잘못되는지 한두 줄
+    validations:
+      required: true
+  - type: input
+    id: context
+    attributes:
+      label: Bounded Context
+      description: "문제가 난 컨텍스트 패키지 (예: order). 공통 기반이면 common"
+      placeholder: order
+    validations:
+      required: true
+  - type: dropdown
+    id: environment
+    attributes:
+      label: 환경
+      options:
+        - local
+        - prod
+        - CI
+        - 테스트
+    validations:
+      required: true
+  - type: textarea
+    id: reproduce
+    attributes:
+      label: 재현 절차
+      description: 요청(메서드·경로·본문) 또는 실패하는 테스트 이름
+      placeholder: |
+        1. POST /api/orders {"productId": 1, "quantity": 0}
+        2. ...
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: 기대 결과
+    validations:
+      required: true
+  - type: textarea
+    id: actual
+    attributes:
+      label: 실제 결과
+      description: 에러 응답 본문(ProblemDetail)이나 테스트 실패 출력. 비밀 값은 지운다
+      render: text
+    validations:
+      required: true
+  - type: input
+    id: trace-id
+    attributes:
+      label: traceId
+      description: 에러 응답의 traceId 또는 X-Request-Id 헤더 값. 로그(trace.id)를 찾는 키다. HTTP 요청이 아니면 "없음"
+    validations:
+      required: true
+  - type: textarea
+    id: logs
+    attributes:
+      label: 관련 로그
+      description: trace.id로 찾은 로그 줄
+      render: text
+  - type: textarea
+    id: notes
+    attributes:
+      label: 원인 추정·참고

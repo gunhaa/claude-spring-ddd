@@ -1,0 +1,5 @@
+# 테스트. 변수는 test.env(테스트 클래스패스)에서만 읽으므로 개발자 개인 .env와 작업 디렉터리에 영향받지 않는다.
+# DB 접속 정보는 Testcontainers(@ServiceConnection)가 채운다.
+spring:
+  config:
+    import: classpath:test.env[.properties]

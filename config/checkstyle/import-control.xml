@@ -1,0 +1,60 @@
+<?xml version="1.0"?>
+<!DOCTYPE import-control PUBLIC
+        "-//Checkstyle//DTD ImportControl Configuration 1.4//EN"
+        "https://checkstyle.org/dtds/import_control_1_4.dtd">
+
+<!--
+  DDD 계층 의존 규칙 (ARCHITECTURE.md 3.2절, AGENTS.md 6절).
+  기본은 허용이고, 계층별로 어기면 안 되는 import만 막는다.
+  <context>는 com.example.app 바로 아래의 Bounded Context 패키지 하나를 뜻한다.
+-->
+<import-control pkg="com.example.app" strategyOnMismatch="allowed">
+
+    <subpackage name="common">
+        <!-- 에러 모델은 모든 계층이 쓰므로 Spring·웹에 의존하지 않는다 -->
+        <subpackage name="error">
+            <disallow pkg="org.springframework"/>
+            <disallow pkg="jakarta.servlet"/>
+            <disallow pkg="com.example.app.common.web"/>
+        </subpackage>
+    </subpackage>
+
+    <subpackage name="[^.]+" regex="true">
+
+        <!-- domain: 다른 계층·Spring·웹에 의존하지 않는다. JPA 매핑(jakarta.persistence)만 허용 -->
+        <subpackage name="domain">
+            <disallow pkg="com\.example\.app\.[^.]+\.(application|infrastructure|presentation)" regex="true"/>
+            <disallow pkg="com.example.app.common.web"/>
+            <disallow pkg="com.example.app.common.config"/>
+            <disallow pkg="org.springframework"/>
+            <disallow pkg="jakarta.servlet"/>
+            <disallow pkg="jakarta.transaction"/>
+        </subpackage>
+
+        <!-- application: 흐름 조율만 한다. 웹·인프라 구현을 모른다 -->
+        <subpackage name="application">
+            <disallow pkg="com\.example\.app\.[^.]+\.(infrastructure|presentation)" regex="true"/>
+            <disallow pkg="com.example.app.common.web"/>
+            <disallow pkg="com.example.app.common.config"/>
+            <disallow pkg="org.springframework.web"/>
+            <disallow pkg="org.springframework.http"/>
+            <disallow pkg="jakarta.servlet"/>
+        </subpackage>
+
+        <!-- infrastructure: domain 인터페이스를 구현한다. 웹 계층을 모르고 트랜잭션 경계를 정하지 않는다 -->
+        <subpackage name="infrastructure">
+            <disallow pkg="com\.example\.app\.[^.]+\.presentation" regex="true"/>
+            <disallow pkg="com.example.app.common.web"/>
+            <disallow pkg="org.springframework.web"/>
+            <disallow class="org.springframework.transaction.annotation.Transactional"/>
+        </subpackage>
+
+        <!-- presentation: application 서비스만 호출한다. Repository·인프라를 직접 쓰지 않는다 -->
+        <subpackage name="presentation">
+            <disallow pkg="com\.example\.app\.[^.]+\.infrastructure" regex="true"/>
+            <disallow class="com\.example\.app\.[^.]+\.domain\..*Repository" regex="true"/>
+            <disallow pkg="org.springframework.data"/>
+            <disallow class="org.springframework.transaction.annotation.Transactional"/>
+        </subpackage>
+    </subpackage>
+</import-control>

@@ -1,0 +1,19 @@
+# 로컬 개발용 MySQL. 접속 값은 .env에서 읽고(없으면 아래 기본값), 앱과 같은 .env를 쓴다.
+services:
+  mysql:
+    image: mysql:8.4
+    container_name: app-mysql
+    environment:
+      MYSQL_DATABASE: ${DB_NAME:-app}
+      MYSQL_USER: ${DB_USERNAME:-app}
+      MYSQL_PASSWORD: ${DB_PASSWORD:-app}
+      MYSQL_ROOT_PASSWORD: root
+      TZ: ${APP_TIME_ZONE:-Asia/Seoul}
+    command: --character-set-server=utf8mb4 --collation-server=utf8mb4_unicode_ci
+    ports:
+      - "${DB_PORT:-3306}:3306"
+    volumes:
+      - mysql-data:/var/lib/mysql
+
+volumes:
+  mysql-data:
